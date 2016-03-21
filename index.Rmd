@@ -1,22 +1,79 @@
 ---
-title: "Practical Machine Learning"
+title: "Practical Machine Learning Project"
 author: "Shawn Kercher"
 date: "March 20, 2016"
 output: html_document
 ---
+### Summary
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r}
-summary(cars)
+#### Load Libraries
+```{r inculde=FALSE, warning=FALSE, cache=FALSE, message=FALSE}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+library(randomForest)
+library(RGtk2)
 ```
 
-You can also embed plots, for example:
+#### Read the download and read the data
+```{r, warning=FALSE}
+#Setting seed for reproducing same data
+set.seed(15)
 
-```{r, echo=FALSE}
-plot(cars)
+training <-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na.strings=c("NA","#DIV/0!",""))
+testing <-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", na.strings=c("NA","#DIV/0!",""))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#### Clean the Data
+
+Deleting columns with missing values and removing variables that will not be used
+
+```{r, echo=TRUE}
+training <- training [,colSums(is.na(training)) == 0]
+testing <- testing [,colSums(is.na(testing)) == 0]  
+
+training <- training[,-c(1:7)]
+testing <- testing[,-c(1:7)]
+```
+
+Partition the data into two sets. Training and testing
+```{r, echo=TRUE}
+train1 <- createDataPartition(y=training$classe, p=0.6, list=FALSE)
+mTraining <- training[train1, ]; myTesting <- training[-train1, ]
+dim(mTraining); dim(myTesting) 
+
+```
+
+#### Descision Tree
+
+```{r, echo=TRUE}
+model1 <- rpart(classe ~ ., data=mTraining, method="class")
+prediction1 <- predict(model1, myTesting, type = "class")
+rpart.plot(model1, main="Decision Tree", extra=102, under=TRUE, faclen=0)
+confusionMatrix(prediction1, myTesting$classe)
+```
+
+#### Random Forest
+
+```{r, echo=TRUE}
+model2 <- randomForest(classe ~. , data=mTraining, method="class")
+prediction2 <- predict(model2, myTesting, type = "class")
+confusionMatrix(prediction2, myTesting$classe)
+```
+
+#### Correlation
+
+```{r, echo=TRUE}
+corr <- caret::findCorrelation(cor(mTraining[, -53]), cutoff=0.8)
+names(mTraining)[corr]
+```
+
+#### Conclusion
+
+In conclusion, the decision tree analysis had less of an accuracy of 0.7573 compared to the Random Forest analysis of an accuracy of 0.9934. 
+
