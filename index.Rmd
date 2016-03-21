@@ -77,3 +77,16 @@ names(mTraining)[corr]
 
 In conclusion, the decision tree analysis had less of an accuracy of 0.7573 compared to the Random Forest analysis of an accuracy of 0.9934. 
 
+## Answer Submission Files  
+
+```{r, echo=TRUE}
+submission = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+submission(prediction1)
+
